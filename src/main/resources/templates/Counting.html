@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Read File</title>
+</head>
+<body>
+<h1>Результаты вычислений:</h1>
+<ul>
+    <li th:each="expression : ${expressions}" th:text="${expression}"></li>
+</ul>
+<style>
+    .btn {
+        display: inline-block; /* Чтобы кнопка выглядела как кнопка */
+        padding: 10px 20px; /* Внутренние отступы */
+        color: white; /* Цвет текста */
+        background-color: #007bff; /* Цвет фона */
+        border: none; /* Убираем границу */
+        border-radius: 5px; /* Скругляем углы */
+        text-decoration: none; /* Убираем подчеркивание */
+        font-size: 16px; /* Размер шрифта */
+        cursor: pointer; /* Указываем, что это кнопка */
+        transition: background-color 0.3s; /* Плавный переход цвета */
+    }
+
+    .btn:hover {
+        background-color: #0056b3; /* Цвет фона при наведении */
+    }
+</style>
+
+<a href="/" class="btn">Вернуться на главную</a>
+</body>
+</html>
