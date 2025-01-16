@@ -1,4 +1,4 @@
-package org.example;
+package org.example.java_project_web;
 
 import java.util.ArrayList;
 import java.util.List;

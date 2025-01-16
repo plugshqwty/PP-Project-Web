@@ -3,9 +3,9 @@ package org.example.java_project_web;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.example.MathEvaluator;
-import org.example.MathEvaluatorLibrary;
-import org.example.MathEvaluatorNot;
+import org.example.java_project_web.MathEvaluator;
+import org.example.java_project_web.MathEvaluatorLibrary;
+import org.example.java_project_web.MathEvaluatorNot;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
