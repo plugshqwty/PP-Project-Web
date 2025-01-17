@@ -1,6 +1,14 @@
 package org.example.java_project_web;
 
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import javax.servlet.http.HttpServletRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.java_project_web.MathEvaluator;
@@ -23,11 +31,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Controller
-public class MainController {
+public class  MainController {
 
     @GetMapping("/")
     public String home(Model model) {
@@ -433,6 +442,7 @@ public class MainController {
     @GetMapping("/countW")
     public String countW(Model model) {
         expressions = MathEvaluatorNot.evaluateExpressions(expressions);
+        //System.out.println("Expressions: " + expressions);
         model.addAttribute("expressions", expressions); // Передаем список в модель
         return "Counting";// возвращаем представление для отображения данных
     }
@@ -441,6 +451,112 @@ public class MainController {
         expressions = MathEvaluatorLibrary.evaluateExpressions(expressions);
         model.addAttribute("expressions", expressions); // Передаем список в модель
         return "Counting";// возвращаем представление для отображения данных
+    }
+    @PostMapping("/apply-settings")
+    public ResponseEntity<Map<String, String>> applySettings(@RequestParam("fileFormat") String selectedFileType,
+                                                             @RequestParam(value = "option1", required = false) boolean isArchived,
+                                                             @RequestParam(value = "option2", required = false) boolean isEncrypted,
+                                                             // @RequestParam("expressions") List<String> expressions,
+                                                             Model model) {
+        // Отладочный вывод параметров
+        System.out.println("Selected File Type: " + selectedFileType);
+        System.out.println("Is Archived: " + isArchived);
+        System.out.println("Is Encrypted: " + isEncrypted);
+        System.out.println("Expressions: " + expressions);
+
+        Map<String, String> response = new HashMap<>();
+
+        FileProcessing processor = new FileProcessing();
+        FileArchiver archiver = new FileArchiver();
+        Path outputPath = null;
+
+        // Логика обработки файлов
+        if ("txt".equals(selectedFileType)) {
+            outputPath = Path.of("output.txt");
+            try {
+                processor.writeTextFile(outputPath, expressions);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        } else if ("xml".equals(selectedFileType)) {
+            outputPath = Path.of("output.xml");
+            MathExamples mathExamples = new MathExamples();
+            List<MathExample> mathExampleList = new ArrayList<>();
+            for (String expr : expressions) {
+                MathExample example = new MathExample();
+                example.setExpression(expr);
+                mathExampleList.add(example);
+            }
+            mathExamples.setExamples(mathExampleList);
+            try {
+                processor.writeXmlFile(outputPath, mathExamples);
+            } catch (JAXBException ex) {
+                throw new RuntimeException(ex);
+            }
+        } else if ("json".equals(selectedFileType)) {
+            outputPath = Path.of("output.json");
+            MathExampleList mathExampleList = new MathExampleList();
+            List<MathExample> mathExamples = new ArrayList<>();
+            for (String expr : expressions) {
+                MathExample example = new MathExample();
+                example.setExpression(expr);
+                mathExamples.add(example);
+            }
+            mathExampleList.setExamples(mathExamples);
+            try {
+                processor.writeJsonFile(outputPath, mathExampleList);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        } else if ("yaml".equals(selectedFileType)) {
+            outputPath = Path.of("output.yaml");
+            List<MathExample> mathExamples = new ArrayList<>();
+            for (String expr : expressions) {
+                MathExample example = new MathExample();
+                example.setExpression(expr);
+                mathExamples.add(example);
+            }
+            try {
+                processor.writeYamlFile(outputPath, expressions);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+
+        // Шифрование
+        if (isEncrypted) {
+            try {
+                SecretKey key = FileEncryptor.generateKey();
+                Path keyPath = Path.of("keyfile.key");
+                FileEncryptor.saveKey(key, keyPath);
+                byte[] iv = FileEncryptor.generateIv();
+                Path ivPath = Path.of("ivfile.bin");
+                FileEncryptor.saveIv(iv, ivPath);
+                Path encryptedOutputPath = Path.of(outputPath.toString() + ".enc");
+                FileEncryptor.encryptFile(outputPath, encryptedOutputPath, key, iv);
+                outputPath = encryptedOutputPath;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Архивирование
+        if (isArchived) {
+            Path archivePath = Path.of("output.zip");
+            try {
+                archiver.archiveFile(outputPath, archivePath);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        try{
+        // Возвращаем результат
+        response.put("message", "File saved successfully: " + outputPath.toString());
+        return ResponseEntity.ok(response);
+    } catch (Exception a) {
+        response.put("message", "Error: " + a.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
     }
 
 
@@ -548,5 +664,6 @@ public class MainController {
     private static boolean isValidMathExpression(String expr) {
         return expr.matches(".*[0-9].*"); // Пример проверки: содержит цифры
     }
+
 
 }
